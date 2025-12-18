@@ -17,29 +17,18 @@ if (!mongoUri) {
 }
 
 /* =========================
-   CORS CONFIG
+   CORS CONFIG (FINAL - AMAN)
 ========================= */
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://sepukopi.vercel.app'
-];
-
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS blocked'));
-  },
-  credentials: true
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());
 
 /* =========================
-   HEALTH CHECK (PENTING)
+   HEALTH CHECK
 ========================= */
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
@@ -69,7 +58,7 @@ app.get('/', (req, res) => {
 });
 
 /* =========================
-   404 HANDLER (PENTING)
+   404 HANDLER
 ========================= */
 app.use((req, res) => {
   res.status(404).json({
@@ -82,10 +71,10 @@ app.use((req, res) => {
    GLOBAL ERROR HANDLER
 ========================= */
 app.use((err, req, res, next) => {
-  console.error('🔥 ERROR:', err.message);
+  console.error('🔥 ERROR:', err);
   res.status(500).json({
     success: false,
-    message: err.message
+    message: err.message || 'Internal Server Error'
   });
 });
 

@@ -15,7 +15,7 @@ const mongoUri = process.env.MONGO_URI;
 const allowedOrigins = [
     'http://localhost:5173', 
     'http://localhost:3000',
-    'https://sepukopi.vercel.app',
+    'https://sepukopi.vercel.app'',
 ];
 
 app.use(cors({

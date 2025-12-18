@@ -15,7 +15,7 @@ const mongoUri = process.env.MONGO_URI;
 const allowedOrigins = [
     'http://localhost:5173', 
     'http://localhost:3000',
-    // 'https://nama-proyek-anda.vercel.app' // Nanti buka komentar ini & ganti URL-nya
+    'https://sepukopi.vercel.app',
 ];
 
 app.use(cors({

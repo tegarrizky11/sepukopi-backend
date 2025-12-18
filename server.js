@@ -1,44 +1,55 @@
-require('dotenv').config(); 
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+
 const app = express();
 
-// Mengambil variabel dari .env
-const PORT = process.env.PORT || 5000; 
+/* =========================
+   BASIC CONFIG
+========================= */
+const PORT = process.env.PORT || 5000;
 const mongoUri = process.env.MONGO_URI;
 
-// ===========================================
-// 1. KONFIGURASI CORS (UNTUK HOSTING)
-// ===========================================
-// Tambahkan URL Vercel Anda di sini setelah deploy
+if (!mongoUri) {
+  console.error('❌ MONGO_URI TIDAK ADA');
+  process.exit(1);
+}
+
+/* =========================
+   CORS CONFIG
+========================= */
 const allowedOrigins = [
-    'http://localhost:5173', 
-    'http://localhost:3000',
-    'https://sepukopi.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://sepukopi.vercel.app'
 ];
 
 app.use(cors({
-    origin: function (origin, callback) {
-        // Izinkan request tanpa origin (seperti mobile apps atau Postman)
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-            callback(null, true);
-        } else {
-            callback(new Error('Akses diblokir oleh kebijakan CORS'));
-        }
-    },
-    credentials: true
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS blocked'));
+  },
+  credentials: true
 }));
 
-app.use(express.json()); 
+app.use(express.json());
 
-// ===========================================
-// 2. IMPORT & PASANG ROUTES
-// ===========================================
+/* =========================
+   HEALTH CHECK (PENTING)
+========================= */
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
+
+/* =========================
+   ROUTES
+========================= */
 const authRoutes = require('./routes/authRoutes');
-const productRoutes = require('./routes/productRoutes'); 
+const productRoutes = require('./routes/productRoutes');
 const saleRoutes = require('./routes/saleRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 
@@ -47,38 +58,50 @@ app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/transactions', transactionRoutes);
 
-// Rute Dasar (Testing saat deploy)
+/* =========================
+   ROOT TEST
+========================= */
 app.get('/', (req, res) => {
-    res.json({ 
-        status: 'Server Active', 
-        message: 'Sepukopi POS API is Running Successfully' 
-    });
+  res.status(200).json({
+    status: 'Server Active',
+    message: 'Sepukopi POS API is Running Successfully'
+  });
 });
 
-// ===========================================
-// 3. PENANGANAN ERROR GLOBAL
-// ===========================================
+/* =========================
+   404 HANDLER (PENTING)
+========================= */
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} tidak ditemukan`
+  });
+});
+
+/* =========================
+   GLOBAL ERROR HANDLER
+========================= */
 app.use((err, req, res, next) => {
-    console.error('Error Stack:', err.stack); 
-    res.status(err.status || 500).json({
-        success: false,
-        message: err.message || 'Internal Server Error'
-    });
+  console.error('🔥 ERROR:', err.message);
+  res.status(500).json({
+    success: false,
+    message: err.message
+  });
 });
 
-// ===========================================
-// 4. KONEKSI MONGODB & START SERVER
-// ===========================================
-mongoose.set('strictQuery', false); // Menghindari warning di versi Mongoose terbaru
+/* =========================
+   DB CONNECT & START
+========================= */
+mongoose.set('strictQuery', false);
 
 mongoose.connect(mongoUri)
-    .then(() => {
-        console.log('✅ Connected to MongoDB Atlas');
-        app.listen(PORT, () => {
-            console.log(`🚀 Server online di port: ${PORT}`);
-        });
-    })
-    .catch((err) => {
-        console.error('❌ MongoDB Connection Error:', err.message);
-        process.exit(1); 
+  .then(() => {
+    console.log('✅ MongoDB Connected');
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
     });
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB Error:', err.message);
+    process.exit(1);
+  });
